@@ -1,6 +1,6 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { CacheFirst, NetworkFirst, NetworkOnly, Serwist, StaleWhileRevalidate } from 'serwist';
+import { NetworkFirst, NetworkOnly, Serwist, StaleWhileRevalidate } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -59,14 +59,15 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // The grocery list page itself: serve from cache first for offline,
-    // then try network to update. This ensures the page loads immediately
-    // when offline instead of showing the fallback page.
+    // The grocery list page itself: try network first for fresh content,
+    // but fall back to cache if network fails. This ensures the page works
+    // offline while staying fresh when online.
     {
       matcher: ({ request, url, sameOrigin }) =>
         isPageRequest(request, sameOrigin, url.pathname) && OFFLINE_PATHS.has(url.pathname),
-      handler: new CacheFirst({
+      handler: new NetworkFirst({
         cacheName: 'grocery-list-page',
+        networkTimeoutSeconds: 3,
         plugins: [
           {
             cacheWillUpdate: async ({ response }) => {
@@ -89,21 +90,8 @@ const serwist = new Serwist({
     // actually render while offline.
     ...defaultCacheWithoutDocuments,
   ],
-  fallbacks: {
-    entries: [
-      {
-        url: '/~offline',
-        matcher({ request }) {
-          // Only show offline fallback for pages that aren't the grocery list
-          // The grocery list should work offline with cached content
-          if (request.destination !== 'document') return false;
-          const url = new URL(request.url);
-          const pathname = url.pathname;
-          return !OFFLINE_PATHS.has(pathname);
-        },
-      },
-    ],
-  },
+  // Remove fallbacks to prevent automatic redirects to offline page
+  // The grocery list will handle network failures through caching
 });
 
 serwist.addEventListeners();
