@@ -1,6 +1,6 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { NetworkFirst, NetworkOnly, Serwist, StaleWhileRevalidate } from 'serwist';
+import { CacheFirst, NetworkFirst, NetworkOnly, Serwist, StaleWhileRevalidate } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -59,16 +59,22 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // The grocery list page itself: try the network first (so it's
-    // always fresh when online), fall back to the last cached copy when
-    // there's no connection. Covers both a hard page load and a
-    // client-side RSC navigation into /grocerylist.
+    // The grocery list page itself: serve from cache first for offline,
+    // then try network to update. This ensures the page loads immediately
+    // when offline instead of showing the fallback page.
     {
       matcher: ({ request, url, sameOrigin }) =>
         isPageRequest(request, sameOrigin, url.pathname) && OFFLINE_PATHS.has(url.pathname),
-      handler: new NetworkFirst({
+      handler: new CacheFirst({
         cacheName: 'grocery-list-page',
-        networkTimeoutSeconds: 2, // Faster fallback to cache when offline
+        plugins: [
+          {
+            cacheWillUpdate: async ({ response }) => {
+              // Only cache successful responses
+              return response && response.status === 200 ? response : null;
+            },
+          },
+        ],
       }),
     },
     // Every other page (edit/catalog, admin, anything else): never cache,
@@ -87,8 +93,12 @@ const serwist = new Serwist({
     entries: [
       {
         url: '/~offline',
-        matcher({ request }) {
-          return request.destination === 'document';
+        matcher({ request, url }) {
+          // Only show offline fallback for pages that aren't the grocery list
+          // The grocery list should work offline with cached content
+          if (request.destination !== 'document') return false;
+          const pathname = url.pathname;
+          return !OFFLINE_PATHS.has(pathname);
         },
       },
     ],
