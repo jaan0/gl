@@ -93,10 +93,11 @@ const serwist = new Serwist({
     entries: [
       {
         url: '/~offline',
-        matcher({ request, url }) {
+        matcher({ request }) {
           // Only show offline fallback for pages that aren't the grocery list
           // The grocery list should work offline with cached content
           if (request.destination !== 'document') return false;
+          const url = new URL(request.url);
           const pathname = url.pathname;
           return !OFFLINE_PATHS.has(pathname);
         },
