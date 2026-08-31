@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f9f9f9;
+  --foreground: #1a1c1c;
+  --primary: #006b5f;
+  --primary-container: #2dd4bf;
+  --surface: #ffffff;
+  --surface-container-low: #f3f3f4;
+  --surface-container: #eeeeee;
+  --on-surface-variant: #3c4a46;
+  --destructive: #ba1a1a;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Soft Shadow from DESIGN.md */
+.shadow-fresh {
+  box-shadow: 0px 4px 20px rgba(71, 85, 105, 0.06);
+}
+
+/* Font-size scale controlled by data attribute on <html> */
+html[data-font-size="large"] {
+  font-size: 115%;
+}
+html[data-font-size="xlarge"] {
+  font-size: 135%;
+}
+
+/* Smooth transitions & touch optimization */
+* {
+  transition: font-size 0.2s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide scrollbars on pill rows */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent horizontal overflow on mobile */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Respect the home-indicator / gesture-bar area on notched phones so the
+   fixed bottom nav never sits under it. */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Safe box sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Slide-up animation for modal/bottom sheet */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* RTL: flip left-positioned icons to right in search bars */
+[dir="rtl"] .absolute.left-3\.5 {
+  left: auto;
+  right: 0.875rem;
+}
+[dir="rtl"] input[type="text"],
+[dir="rtl"] input[type="password"],
+[dir="rtl"] input[type="url"],
+[dir="rtl"] input[type="number"] {
+  text-align: right;
+}
+
