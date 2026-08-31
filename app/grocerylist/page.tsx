@@ -1,4 +1,4 @@
-import { db } from '@/src/db';
+import { getDb } from '@/src/db';
 import { catalog, shoppingList } from '@/src/db/schema';
 import { eq } from 'drizzle-orm';
 import { ShoppingBag, Plus } from 'lucide-react';
@@ -9,22 +9,40 @@ export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
 export default async function GroceryListPage() {
-  const items = await db
-    .select({
-      id: shoppingList.id,
-      catalogId: shoppingList.catalogId,
-      quantity: shoppingList.quantity,
-      unit: shoppingList.unit,
-      isBought: shoppingList.isBought,
-      name: catalog.name,
-      nameUr: catalog.nameUr,
-      nameSd: catalog.nameSd,
-      category: catalog.category,
-      imageUrl: catalog.imageUrl,
-    })
-    .from(shoppingList)
-    .leftJoin(catalog, eq(shoppingList.catalogId, catalog.id))
-    .orderBy(shoppingList.addedAt);
+  let items;
+  const db = getDb();
+  
+  if (!db) {
+    // Database not available (missing DATABASE_URL or initialization failed)
+    console.log('Database not initialized, using empty list');
+    items = [];
+  } else {
+    try {
+      items = await db
+        .select({
+          id: shoppingList.id,
+          catalogId: shoppingList.catalogId,
+          quantity: shoppingList.quantity,
+          unit: shoppingList.unit,
+          isBought: shoppingList.isBought,
+          name: catalog.name,
+          nameUr: catalog.nameUr,
+          nameSd: catalog.nameSd,
+          category: catalog.category,
+          imageUrl: catalog.imageUrl,
+        })
+        .from(shoppingList)
+        .leftJoin(catalog, eq(shoppingList.catalogId, catalog.id))
+        .orderBy(shoppingList.addedAt);
+    } catch (error) {
+      // If database is unavailable (offline, connection error, etc.),
+      // return empty array - the client-side offline queue will handle
+      // any pending actions, and the service worker will serve cached
+      // versions when available
+      console.error('Database unavailable, using empty list:', error);
+      items = [];
+    }
+  }
 
   return (
     <div

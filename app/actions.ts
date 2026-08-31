@@ -1,10 +1,19 @@
 'use server';
 
-import { db } from '../src/db';
+import { getDb } from '../src/db';
 import { catalog, shoppingList } from '../src/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+
+// ── Helper to get database with error handling ──
+function getDbOrThrow() {
+  const db = getDb();
+  if (!db) {
+    throw new Error('Database unavailable');
+  }
+  return db;
+}
 
 // ── Helper to revalidate all routes ──
 function revalidateAll() {
@@ -43,6 +52,7 @@ export async function adminLogout() {
 // ── Admin: Add product to catalog ──
 export async function addCatalogItem(formData: FormData) {
   if (!(await isAdmin())) throw new Error('Unauthorized');
+  const db = getDbOrThrow();
 
   await db.insert(catalog).values({
     name: formData.get('name') as string,
@@ -60,6 +70,7 @@ export async function addCatalogItem(formData: FormData) {
 // ── Admin: Delete single product from catalog ──
 export async function deleteCatalogItem(id: number) {
   if (!(await isAdmin())) throw new Error('Unauthorized');
+  const db = getDbOrThrow();
   await db.delete(catalog).where(eq(catalog.id, id));
   revalidateAll();
 }
@@ -68,6 +79,7 @@ export async function deleteCatalogItem(id: number) {
 export async function deleteMultipleCatalogItems(ids: number[]) {
   if (!(await isAdmin())) throw new Error('Unauthorized');
   if (ids.length === 0) return;
+  const db = getDbOrThrow();
   await db.delete(catalog).where(inArray(catalog.id, ids));
   revalidateAll();
 }
@@ -75,6 +87,7 @@ export async function deleteMultipleCatalogItems(ids: number[]) {
 // ── Admin: Delete all products from catalog ──
 export async function deleteAllCatalogItems() {
   if (!(await isAdmin())) throw new Error('Unauthorized');
+  const db = getDbOrThrow();
   await db.delete(catalog);
   revalidateAll();
 }
@@ -89,6 +102,7 @@ export async function updateCatalogItem(
 ) {
   if (!(await isAdmin())) throw new Error('Unauthorized');
   if (!name.trim()) throw new Error('Name is required');
+  const db = getDbOrThrow();
 
   await db
     .update(catalog)
@@ -109,6 +123,7 @@ export async function addToShoppingList(
   customQuantity?: string,
   customUnit?: string
 ) {
+  const db = getDbOrThrow();
   const item = await db
     .select()
     .from(catalog)
@@ -134,6 +149,7 @@ export async function addAdHocItemToList(
   unit: string,
   imageUrl?: string
 ) {
+  const db = getDbOrThrow();
   // First insert into catalog as quick item
   const [insertedCatalog] = await db
     .insert(catalog)
@@ -158,6 +174,7 @@ export async function addAdHocItemToList(
 
 // ── User: Toggle bought status ──
 export async function toggleBought(id: number, currentStatus: boolean) {
+  const db = getDbOrThrow();
   await db
     .update(shoppingList)
     .set({ isBought: !currentStatus })
@@ -168,12 +185,14 @@ export async function toggleBought(id: number, currentStatus: boolean) {
 
 // ── User: Remove item from shopping list ──
 export async function removeFromList(id: number) {
+  const db = getDbOrThrow();
   await db.delete(shoppingList).where(eq(shoppingList.id, id));
   revalidateAll();
 }
 
 // ── User: Clear all bought items ──
 export async function clearBought() {
+  const db = getDbOrThrow();
   await db.delete(shoppingList).where(eq(shoppingList.isBought, true));
   revalidateAll();
 }
@@ -191,6 +210,7 @@ export async function bulkUploadCatalog(
   }[]
 ): Promise<{ inserted: number; skipped: number; errors: string[] }> {
   if (!(await isAdmin())) throw new Error('Unauthorized');
+  const db = getDbOrThrow();
 
   let inserted = 0;
   let skipped = 0;

@@ -68,7 +68,7 @@ const serwist = new Serwist({
         isPageRequest(request, sameOrigin, url.pathname) && OFFLINE_PATHS.has(url.pathname),
       handler: new NetworkFirst({
         cacheName: 'grocery-list-page',
-        networkTimeoutSeconds: 4,
+        networkTimeoutSeconds: 2, // Faster fallback to cache when offline
       }),
     },
     // Every other page (edit/catalog, admin, anything else): never cache,

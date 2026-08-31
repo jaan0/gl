@@ -1,4 +1,4 @@
-import { db } from '@/src/db';
+import { getDb } from '@/src/db';
 import { catalog } from '@/src/db/schema';
 import { adminLogin, adminLogout, addCatalogItem } from '@/app/actions';
 import { cookies } from 'next/headers';
@@ -85,6 +85,25 @@ export default async function AdminPage() {
             </div>
           </form>
         </div>
+      </div>
+    );
+  }
+
+  const db = getDb();
+  if (!db) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f9f9f9] px-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2dd4bf]/20 text-[#006b5f]">
+          <ShoppingBag size={28} />
+        </div>
+        <h1 className="mt-4 text-lg font-bold text-[#1a1c1c]">Database Unavailable</h1>
+        <p className="mt-2 text-sm text-gray-500">Admin requires a database connection. Please check your configuration.</p>
+        <Link
+          href="/grocerylist"
+          className="mt-4 rounded-full bg-[#006b5f] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#00574d] transition-colors"
+        >
+          Return to List
+        </Link>
       </div>
     );
   }

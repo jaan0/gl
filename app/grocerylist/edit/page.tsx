@@ -1,6 +1,6 @@
-import { db } from '@/src/db';
+import { getDb } from '@/src/db';
 import { catalog } from '@/src/db/schema';
-import { ShoppingBag, Plus } from 'lucide-react';
+import { ShoppingBag, Plus, WifiOff } from 'lucide-react';
 import Link from 'next/link';
 import CatalogClient from './CatalogClient';
 
@@ -8,6 +8,25 @@ export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
 export default async function EditPage() {
+  const db = getDb();
+  if (!db) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f9f9f9] px-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2dd4bf]/20 text-[#006b5f]">
+          <WifiOff size={28} />
+        </div>
+        <h1 className="mt-4 text-lg font-bold text-[#1a1c1c]">Catalog Unavailable</h1>
+        <p className="mt-2 text-sm text-gray-500">Adding items requires a database connection. Please check your connection.</p>
+        <Link
+          href="/grocerylist"
+          className="mt-4 rounded-full bg-[#006b5f] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#00574d] transition-colors"
+        >
+          Return to List
+        </Link>
+      </div>
+    );
+  }
+
   const products = await db.select().from(catalog).orderBy(catalog.name);
 
   return (
