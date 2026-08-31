@@ -124,11 +124,12 @@ export async function addToShoppingList(
   customUnit?: string
 ) {
   const db = getDbOrThrow();
-  const item = await db
+  const items = await db
     .select()
     .from(catalog)
-    .where(eq(catalog.id, catalogId))
-    .then((r) => r[0]);
+    .where(eq(catalog.id, catalogId));
+  
+  const item = items[0];
 
   if (!item) throw new Error('Product not found');
 
